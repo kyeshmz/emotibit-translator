@@ -72,28 +72,41 @@ def analyze_sensor_stats(first_5min_df, last_5min_df, sensor_type):
 
 def analyze_accelerometer_stats(first_5min_df, last_5min_df):
     """
-    Calculate standard deviation for accelerometer data's first and last 5 minutes
+    Calculate statistics for accelerometer data's first and last 5 minutes
     """
     stats = {}
     
     # Calculate individual axis statistics
     for axis in ['AX', 'AY', 'AZ']:
         first_5_std = first_5min_df[axis].std()
+        first_5_mean = first_5min_df[axis].mean()
+        first_5_median = first_5min_df[axis].median()
+        
         last_5_std = last_5min_df[axis].std()
+        last_5_mean = last_5min_df[axis].mean()
+        last_5_median = last_5min_df[axis].median()
         
         # Combine first and last 5 minutes for combined stats
         combined_df = pd.concat([first_5min_df, last_5min_df])
         combined_std = combined_df[axis].std()
+        combined_mean = combined_df[axis].mean()
+        combined_median = combined_df[axis].median()
         
         print(f"\nStatistics for {axis}:")
-        print(f"First 5 minutes std: {first_5_std:.4f}")
-        print(f"Last 5 minutes std: {last_5_std:.4f}")
-        print(f"Combined first/last 5 minutes std: {combined_std:.4f}")
+        print(f"First 5 minutes - std: {first_5_std:.4f}, mean: {first_5_mean:.4f}, median: {first_5_median:.4f}")
+        print(f"Last 5 minutes - std: {last_5_std:.4f}, mean: {last_5_mean:.4f}, median: {last_5_median:.4f}")
+        print(f"Combined - std: {combined_std:.4f}, mean: {combined_mean:.4f}, median: {combined_median:.4f}")
         
         stats.update({
             f'{axis}_first_5_std': first_5_std,
+            f'{axis}_first_5_mean': first_5_mean,
+            f'{axis}_first_5_median': first_5_median,
             f'{axis}_last_5_std': last_5_std,
-            f'{axis}_combined_std': combined_std
+            f'{axis}_last_5_mean': last_5_mean,
+            f'{axis}_last_5_median': last_5_median,
+            f'{axis}_combined_std': combined_std,
+            f'{axis}_combined_mean': combined_mean,
+            f'{axis}_combined_median': combined_median
         })
     
     # Calculate combined accelerometer statistics (all axes together)
@@ -101,21 +114,34 @@ def analyze_accelerometer_stats(first_5min_df, last_5min_df):
     last_5_combined = np.sqrt(last_5min_df['AX']**2 + last_5min_df['AY']**2 + last_5min_df['AZ']**2)
     
     first_5_total_std = first_5_combined.std()
+    first_5_total_mean = first_5_combined.mean()
+    first_5_total_median = first_5_combined.median()
+    
     last_5_total_std = last_5_combined.std()
+    last_5_total_mean = last_5_combined.mean()
+    last_5_total_median = last_5_combined.median()
     
     # Combine first and last 5 minutes
     all_combined = pd.concat([first_5_combined, last_5_combined])
     combined_total_std = all_combined.std()
+    combined_total_mean = all_combined.mean()
+    combined_total_median = all_combined.median()
     
     print(f"\nStatistics for combined accelerometer magnitude:")
-    print(f"First 5 minutes total std: {first_5_total_std:.4f}")
-    print(f"Last 5 minutes total std: {last_5_total_std:.4f}")
-    print(f"Combined first/last 5 minutes total std: {combined_total_std:.4f}")
+    print(f"First 5 minutes - std: {first_5_total_std:.4f}, mean: {first_5_total_mean:.4f}, median: {first_5_total_median:.4f}")
+    print(f"Last 5 minutes - std: {last_5_total_std:.4f}, mean: {last_5_total_mean:.4f}, median: {last_5_total_median:.4f}")
+    print(f"Combined - std: {combined_total_std:.4f}, mean: {combined_total_mean:.4f}, median: {combined_total_median:.4f}")
     
     stats.update({
         'accel_magnitude_first_5_std': first_5_total_std,
+        'accel_magnitude_first_5_mean': first_5_total_mean,
+        'accel_magnitude_first_5_median': first_5_total_median,
         'accel_magnitude_last_5_std': last_5_total_std,
-        'accel_magnitude_combined_std': combined_total_std
+        'accel_magnitude_last_5_mean': last_5_total_mean,
+        'accel_magnitude_last_5_median': last_5_total_median,
+        'accel_magnitude_combined_std': combined_total_std,
+        'accel_magnitude_combined_mean': combined_total_mean,
+        'accel_magnitude_combined_median': combined_total_median
     })
     
     return stats
@@ -123,7 +149,7 @@ def analyze_accelerometer_stats(first_5min_df, last_5min_df):
 
 def main():
     # Get all CSV files in kye_run_1 directory
-    data_dir = 'kye_run_2'
+    data_dir = 'nathan_run_2'
     data_files = glob.glob(f'{data_dir}/*.csv')
     prefix = f'{data_dir}_'  # Prefix for all output files
     
@@ -147,7 +173,8 @@ def main():
     accel_last_5 = None
     
     for file in data_files:
-        if not ('HR' in file or 'T1' in file or 'EA' in file or 'AX' in file or 'AY' in file or 'AZ' in file):
+        if not ('HR' in file or 'T1' in file or 'EA' in file or 'TH' in file or 'BI' in file or 
+                'AX' in file or 'AY' in file or 'AZ' in file):
             continue
             
         print(f"\nReading file: {file}")
@@ -161,6 +188,10 @@ def main():
                 data_type = 'T1'
             elif 'EA' in file:
                 data_type = 'EA'
+            elif 'TH' in file:
+                data_type = 'TH'
+            elif 'BI' in file:
+                data_type = 'BI'
             elif 'AX' in file:
                 data_type = 'AX'
             elif 'AY' in file:
@@ -199,8 +230,8 @@ def main():
                 last_5min.to_csv(last_5min_filename, index=False)
                 print(f"Saved last 5 minutes for {data_type} to {last_5min_filename}")
             
-            # Calculate statistics for HR, T1, and EA
-            if data_type in ['HR', 'T1', 'EA']:
+            # Calculate statistics for HR, T1, EA, TH, and BI
+            if data_type in ['HR', 'T1', 'EA', 'TH', 'BI']:
                 stats = analyze_sensor_stats(first_5min, last_5min, data_type)
                 all_stats.update(stats)
             
